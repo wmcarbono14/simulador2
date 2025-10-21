@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Consulta por Subnível e Números Quânticos</title>
+<style>
+  :root{ --fg:#0e1220; --bg:#ffffff; --muted:#5f6b7b; --line:#e6e8ef; --brand:#0aac5a; --card:#f8fafc; --pill:#fff; --pill-b:#d9dee8; }
+  *{box-sizing:border-box} html,body{height:100%} body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial;color:var(--fg);background:var(--bg)}
+  header{padding:18px 16px;border-bottom:1px solid var(--line);text-align:center}
+  header h1{margin:0;font-size:22px} header p{margin:6px 0 0 0;color:var(--muted)}
+  .wrap{max-width:980px;margin:0 auto;padding:18px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin:14px 0}
+  .row{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end}
+  label{font-weight:600;display:block;margin:6px 0}
+  input,select{border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:#fff;color:#111;font-size:15px}
+  input[type='number']{width:140px} input[type='text']{width:170px} select{width:220px}
+  button{padding:10px 14px;border-radius:12px;border:1px solid var(--fg);background:var(--fg);color:#fff;cursor:pointer;font-weight:700}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .pill{display:inline-block;background:var(--pill);border:1px solid var(--pill-b);padding:6px 10px;border-radius:999px;margin:4px 6px 0 0}
+  .muted{color:var(--muted);font-size:12px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Consulta por Subnível e Números Quânticos</h1>
+  <p>Ex.: 5f11 → (n,l,m<sub>l</sub>,m<sub>s</sub>) • Ou informe (n,l,m<sub>l</sub>,m<sub>s</sub>) para obter p, k, Z mínimo, distribuição e totais por camada.</p>
+</header>
+<div class="wrap">
+  <div class="card">
+    <div class="row">
+      <div><label for="zin">Z</label><input id="zin" type="number" value="118" min="1" max="7000"><div class="muted">1–7000</div></div>
+      <div><label for="kin">k</label><input id="kin" type="number" value="118" min="1" max="7000"><div class="muted">opcional</div></div>
+      <div><button id="calcZ">Calcular</button></div>
+    </div>
+    <div id="cfg" class="mono" style="margin-top:6px;font-size:16px"></div>
+    <div id="caps" style="margin-top:6px"></div>
+    <div id="qk" class="mono" style="margin-top:6px;font-size:16px"></div>
+    <div id="qkWarn" class="muted"></div>
+  </div>
+
+  <div class="card">
+    <h3>Consulta por subnível (texto ou seleção)</h3>
+    <div class="row">
+      <div><label for="subTxt">Subnível</label><input id="subTxt" type="text" placeholder="ex.: 5f11" class="mono"></div>
+      <div><label for="subSel">Usados em Z</label><select id="subSel"><option value="">— selecione —</option></select></div>
+      <div><button id="calcSub">Endereço</button></div>
+    </div>
+    <div id="subOut" class="mono" style="margin-top:6px;font-size:16px"></div>
+    <div id="subWarn" class="muted"></div>
+  </div>
+
+  <div class="card">
+    <h3>Consulta por (n, l, m<sub>l</sub>, m<sub>s</sub>)</h3>
+    <div class="row">
+      <div><label>n</label><input id="nIn" type="number" value="5" min="1"></div>
+      <div><label>l</label><input id="lIn" type="number" value="3" min="0"></div>
+      <div><label>m<sub>l</sub></label><input id="mlIn" type="number" value="1"></div>
+      <div><label>m<sub>s</sub></label><input id="msIn" type="text" value="+1/2" class="mono" style="width:110px"></div>
+      <div><button id="calcQ">Calcular</button></div>
+    </div>
+    <div id="q4Out" class="mono" style="margin-top:6px;font-size:16px"></div>
+    <div id="q4Warn" class="muted"></div>
+    <div id="shellsBox" style="display:none;margin-top:8px">
+      <table id="shellTbl" style="width:100%;border-collapse:collapse">
+        <thead><tr><th>Camada</th><th>n</th><th>Total</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const baseLetters = ["s","p","d","f","g","h","i","j","k","l","m","n","o","p","q","r","t","u","v","w","x","y","z"];
+  function letterFor(l){ if(l<baseLetters.length) return baseLetters[l]; const idx=l-baseLetters.length; const first=String.fromCharCode(97+Math.floor(idx/26)%26); const second=String.fromCharCode(97+(idx%26)); return first+second; }
+  function lFromLetter(s){ s=s.toLowerCase(); const i=baseLetters.indexOf(s); if(i>=0) return i; if(s.length===2){ const v=(s.charCodeAt(0)-97)*26+(s.charCodeAt(1)-97); return baseLetters.length+v; } return null; }
+  function capFor(l){ return 2*(2*l+1); }
+  function buildMadelung(){ const arr=[]; const NMAX=120; for(let n=1;n<=NMAX;n++){ for(let l=0;l<n;l++){ const letter=letterFor(l); arr.push({n,l,letter,orb:`${n}${letter}`,cap:capFor(l),sum:n+l}); } } arr.sort((a,b)=>(a.sum-b.sum)||(a.n-b.n)); let start=1; for(const r of arr){ r.startZ=start; r.endZ=start+r.cap-1; start=r.endZ+1; } return arr; }
+  const MAD=buildMadelung();
+  function fillZ(Z){ const out=[]; let left=Z; for(const r of MAD){ const take=Math.max(0,Math.min(r.cap,left)); out.push({...r,take}); left-=take; if(left<=0) break; } return out; }
+  function mlms(n,l,p){ const orb=2*l+1; if(p<=orb){ return {ml:-l+(p-1), ms:"+1/2"}; } const off=p-orb; return {ml:-l+(off-1), ms:"-1/2"}; }
+  function locateK(k){ for(const r of MAD){ if(k>=r.startZ && k<=r.endZ){ const pos=k-r.startZ+1; return {...r,pos}; } } return null; }
+  function shellLabel(n){ const m={1:"K",2:"L",3:"M",4:"N",5:"O",6:"P",7:"Q"}; return m[n]||`n=${n}`; }
+
+  const zin=document.getElementById('zin'), kin=document.getElementById('kin');
+  const cfg=document.getElementById('cfg'), caps=document.getElementById('caps');
+  const qk=document.getElementById('qk'), qkW=document.getElementById('qkWarn');
+  const subTxt=document.getElementById('subTxt'), subSel=document.getElementById('subSel'), subOut=document.getElementById('subOut'), subWarn=document.getElementById('subWarn');
+  const nIn=document.getElementById('nIn'), lIn=document.getElementById('lIn'), mlIn=document.getElementById('mlIn'), msIn=document.getElementById('msIn');
+  const q4Out=document.getElementById('q4Out'), q4Warn=document.getElementById('q4Warn'), shellBox=document.getElementById('shellsBox'), shellT=document.querySelector('#shellTbl tbody');
+  let cacheUsed=[];
+
+  function renderZ(){ const Z=Number(zin.value), k=Number(kin.value); const used=fillZ(Z); cacheUsed=used;
+    cfg.textContent=used.filter(u=>u.take>0).map(u=>`${u.orb}${u.take}`).join(' ');
+    caps.innerHTML=''; subSel.innerHTML='<option value=\"\">— selecione —</option>'; used.forEach(u=>{ if(u.take>0){ const s=document.createElement('span'); s.className='pill mono'; s.textContent=`${u.orb}${u.take}`; caps.appendChild(s); const o=document.createElement('option'); o.value=`${u.n}|${u.l}|${u.take}`; o.textContent=`${u.orb}${u.take} (cap ${u.cap})`; subSel.appendChild(o);} });
+    if(Number.isFinite(k)&&k>=1&&k<=Z){ const slot=locateK(k); const qm=mlms(slot.n,slot.l,slot.pos); qk.textContent=`n=${slot.n}, l=${slot.l} (${slot.letter}), m_l=${qm.ml}, m_s=${qm.ms} — (subnível ${slot.orb}, posição ${slot.pos})`; qkW.textContent=''; } else { qk.textContent=''; qkW.textContent='(Opcional) Informe k entre 1 e Z para ver o endereço quântico.'; }
+    subOut.textContent=''; subWarn.textContent=''; q4Out.textContent=''; q4Warn.textContent=''; shellBox.style.display='none'; shellT.innerHTML='';
+  }
+
+  function parseSub(txt){ const m=/^(\\d+)\\s*([A-Za-z]+)\\s*(\\d+)$/.exec(txt.trim()); if(!m) return null; const n=parseInt(m[1],10), l=lFromLetter(m[2]), p=parseInt(m[3],10); if(!(n>=1&&Number.isFinite(l)&&p>=1)) return null; return {n,l,p,letter:letterFor(l)}; }
+
+  function subQuery(txt){ const Z=Number(zin.value); const used=cacheUsed.length?cacheUsed:fillZ(Z); const info=parseSub(txt); if(!info){ subOut.textContent=''; subWarn.textContent='Formato inválido. Use algo como 5f11.'; return; }
+    const f=used.find(u=>u.n===info.n && u.l===info.l); if(!f||f.take===0){ subOut.textContent=''; subWarn.textContent=`Para Z=${Z}, ${info.n}${info.letter} não foi preenchido.`; return; }
+    if(info.p>f.take){ subOut.textContent=''; subWarn.textContent=`Para Z=${Z}, ${info.n}${info.letter} tem apenas ${f.take} elétron(ões).`; return; }
+    const qm=mlms(info.n,info.l,info.p); const k=f.startZ+(info.p-1); subOut.textContent=`n=${info.n}, l=${info.l} (${info.letter}), m_l=${qm.ml}, m_s=${qm.ms} — (p=${info.p} de ${info.n}${info.letter}, k=${k})`; subWarn.textContent='';
+  }
+
+  function pFromMlMs(l, ml, ms){ if(ml<-l||ml>l) return null; const orb=2*l+1; if(ms==='+1/2'||ms==='+½'||ms==='+0.5'||ms==='+0,5'||ms==='0.5') return (ml+l)+1; if(ms==='-1/2'||ms==='-½'||ms==='-0.5'||ms==='-0,5') return orb+(ml+l)+1; return null; }
+  function shellLabel(n){ const m={1:'K',2:'L',3:'M',4:'N',5:'O',6:'P',7:'Q'}; return m[n]||`n=${n}`; }
+
+  function qFrom4(){ const n=parseInt(nIn.value,10), l=parseInt(lIn.value,10), ml=parseInt(mlIn.value,10); let ms=msIn.value.replace(/\\s/g,''); if(!(n>=1)) {q4Out.textContent=''; q4Warn.textContent='n ≥ 1.'; return;} if(!(l>=0 && l<=n-1)){ q4Out.textContent=''; q4Warn.textContent='l entre 0 e n−1.'; return;} if(!(ml>=-l && ml<=l)){ q4Out.textContent=''; q4Warn.textContent='m_l entre −l e +l.'; return;} if(!/^(\\+|\\-)?(1\\/2|0\\.5|0,5|½)$/.test(ms)){ q4Out.textContent=''; q4Warn.textContent='Use m_s = +1/2 ou -1/2.'; return;} ms = ms.startswith? (ms.startswith('-')?'-1/2':'+1/2') : (ms[0]==='-'?'-1/2':'+1/2');
+    const p=pFromMlMs(l,ml,ms); if(p===null){ q4Out.textContent=''; q4Warn.textContent='Combinação (m_l, m_s) inválida.'; return; }
+    const item=MAD.find(r=>r.n===n && r.l===l); if(!item){ q4Out.textContent=''; q4Warn.textContent='Subnível não encontrado.'; return; }
+    const k=item.startZ+(p-1), Zmin=k; const used=fillZ(Zmin); const parts=used.filter(u=>u.take>0).map(u=>`${u.orb}${u.take}`);
+    const shells={}; used.forEach(u=>{ if(u.take>0){ shells[u.n]=(shells[u.n]||0)+u.take; }});
+    q4Out.textContent=`(n=${n}, l=${l}, m_l=${ml}, m_s=${ms}) → subnível ${n}${letterFor(l)}, p=${p}, k=${k}, Z mínimo=${Zmin}. Distribuição: ${parts.join(' ')}`;
+    q4Warn.textContent='Se Z real > Zmin, haverá elétrons adicionais.';
+    const tbody=shellT; tbody.innerHTML=''; const ns=Object.keys(shells).map(Number).sort((a,b)=>a-b); ns.forEach(nv=>{ const tr=document.createElement('tr'); tr.innerHTML=`<td><b>${shellLabel(nv)}</b></td><td>${nv}</td><td>${shells[nv]}</td>`; tbody.appendChild(tr); }); shellBox.style.display=ns.length?'block':'none';
+  }
+
+  document.getElementById('calcZ').addEventListener('click', renderZ);
+  document.getElementById('calcSub').addEventListener('click', ()=>subQuery(subTxt.value));
+  subSel.addEventListener('change', e=>{ if(!e.target.value){ subOut.textContent=''; subWarn.textContent=''; return; } const [nStr,lStr,takeStr]=e.target.value.split('|'); const n=parseInt(nStr,10), l=parseInt(lStr,10), take=parseInt(takeStr,10); const qm=mlms(n,l,take); const item=MAD.find(r=>r.n===n&&r.l===l); const k=item.startZ+(take-1); subTxt.value=`${n}${letterFor(l)}${take}`; subOut.textContent=`n=${n}, l=${l} (${letterFor(l)}), m_l=${qm.ml}, m_s=${qm.ms} — último elétron (p=${take}), k=${k}`; subWarn.textContent='Dica: digite outra posição para consultar um elétron específico.'; });
+  document.getElementById('calcQ').addEventListener('click', qFrom4);
+  renderZ();
+})();
+</script>
+</body>
+</html>

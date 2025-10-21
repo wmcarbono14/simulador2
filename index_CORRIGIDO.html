@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prof. William Mendonça – wmcarbono14 | Distribuição Eletrônica</title>
+<meta name="description" content="Simulador de distribuição eletrônica (Diagrama de Linus Pauling / regra n+ℓ), consulta por subnível (ex.: 5f11) e pelos quatro números quânticos.">
+<style>
+  :root{ --bg:#ffffff; --fg:#0e1220; --muted:#5f6b7b; --line:#e6e8ef; --brand:#0aac5a; --btn:#1f2937; --card:#f8fafc; }
+  *{box-sizing:border-box} html,body{height:100%} body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial}
+  header{padding:14px 16px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg);z-index:10}
+  .container{max-width:1040px;margin:0 auto;padding:0 12px}
+  .brand{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .brand h1{font-size:18px;margin:0}
+  .tagline{margin:0;color:var(--muted);font-size:13px}
+  nav{margin-top:8px;display:flex;gap:10px;flex-wrap:wrap}
+  a.btn{display:inline-block;background:var(--btn);color:#fff;border:0;border-radius:12px;padding:10px 14px;font-weight:700;text-decoration:none}
+  a.btn.secondary{background:transparent;color:var(--fg);border:1px solid var(--line)}
+  main{min-height:calc(100vh - 160px)}
+  .hero{padding:32px 16px}
+  .hero h2{font-size:26px;margin:0 0 6px 0}
+  .hero p{margin:0;color:var(--muted)}
+  .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+  .cards{display:grid;grid-template-columns:1fr;gap:14px;margin:20px 0;padding:0 16px}
+  .card{border:1px solid var(--line);border-radius:16px;padding:18px;background:var(--card)}
+  .card h3{margin:0 0 6px 0}
+  footer{border-top:1px solid var(--line);padding:12px;text-align:center;color:var(--muted);font-size:13px}
+  @media(min-width:860px){ .cards{grid-template-columns:1fr 1fr} }
+  .logo{width:64px;height:64px}
+  .orbit{transform-origin:32px 32px; animation:spin 8s linear infinite}
+  .orbit.delay1{animation-delay:-2s} .orbit.delay2{animation-delay:-4s} .orbit.delay3{animation-delay:-6s}
+  @keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <div class="brand">
+        <svg class="logo" viewBox="0 0 64 64" role="img" aria-label="Logo wmcarbono14 (C-14)">
+          <circle cx="32" cy="32" r="10" fill="white" stroke="var(--brand)" stroke-width="2"/>
+          <g font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--brand)">
+            <text x="28" y="36" font-size="16" font-weight="700">C</text>
+            <text x="22" y="30" font-size="10">₆</text>
+            <text x="38" y="24" font-size="10">¹⁴</text>
+          </g>
+          <ellipse cx="32" cy="32" rx="22" ry="12" fill="none" stroke="var(--brand)" stroke-opacity="0.4"/>
+          <ellipse cx="32" cy="32" rx="12" ry="22" fill="none" stroke="var(--brand)" stroke-opacity="0.4"/>
+          <circle cx="32" cy="32" r="26" fill="none" stroke="var(--brand)" stroke-opacity="0.35"/>
+          <g class="orbit"><circle cx="32" cy="6" r="3" fill="var(--brand)"/></g>
+          <g class="orbit delay1"><circle cx="32" cy="58" r="3" fill="var(--brand)"/></g>
+          <g class="orbit delay2"><circle cx="6"  cy="32" r="3" fill="var(--brand)"/></g>
+          <g class="orbit delay3"><circle cx="58" cy="32" r="3" fill="var(--brand)"/></g>
+          <g class="orbit" style="animation-duration:10s"><circle cx="48" cy="12" r="3" fill="var(--brand)"/></g>
+          <g class="orbit" style="animation-duration:12s"><circle cx="16" cy="50" r="3" fill="var(--brand)"/></g>
+        </svg>
+        <div>
+          <h1>Prof. William Mendonça – wmcarbono14</h1>
+          <p class="tagline">Distribuição Eletrônica Interativa — Diagrama de Linus Pauling (regra n+ℓ)</p>
+        </div>
+      </div>
+      <nav>
+        <a class="btn" href="./distribuicao_eletronica_LAYOUT_INVERTIDO_7k_animado_COM_J.html">Simulador Principal</a>
+        <a class="btn secondary" href="./distribuicao_eletronica_SUBNIVEL_E_QNUMEROS.html">Consulta por Subnível e NQ</a>
+        <a class="btn secondary" href="./Excecoes_Diagrama_Linus_Pauling.doc">Exceções (Word)</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <div class="container">
+      <section class="hero">
+        <h2>Distribuição Eletrônica Interativa</h2>
+        <p>Layout invertido com animação e diagonais n+ℓ. Novo: consulta por <b>5f11</b> e pelos <b>quatro números quânticos</b>.</p>
+        <div class="actions">
+          <a class="btn" href="./distribuicao_eletronica_LAYOUT_INVERTIDO_7k_animado_COM_J.html">▶ Iniciar Simulador</a>
+          <a class="btn secondary" href="./distribuicao_eletronica_SUBNIVEL_E_QNUMEROS.html">🔎 Consulta por Subnível / NQ</a>
+        </div>
+      </section>
+
+      <section class="cards">
+        <div class="card">
+          <h3>Simulador Principal</h3>
+          <p>Digite o número atômico (Z) e visualize somente os subníveis ocupados, com endereçamento do elétron k.</p>
+          <div class="actions">
+            <a class="btn" href="./distribuicao_eletronica_LAYOUT_INVERTIDO_7k_animado_COM_J.html">Abrir</a>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Consulta por Subnível e 4 Números Quânticos</h3>
+          <p>Ex.: <b>5f11</b> → (n,l,m<sub>l</sub>,m<sub>s</sub>). Ou informe (n,l,m<sub>l</sub>,m<sub>s</sub>) → mostramos p, k, Z mínimo, distribuição até o elétron e totais por camada.</p>
+          <div class="actions">
+            <a class="btn secondary" href="./distribuicao_eletronica_SUBNIVEL_E_QNUMEROS.html">Abrir</a>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer>Desenvolvido por Prof. William Mendonça (wmcarbono14)</footer>
+</body>
+</html>

@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Distribuição Eletrônica — Simulador (Layout invertido • 7k • com “j”)</title>
+<style>
+  :root{
+    --fg:#0e1220; --bg:#ffffff; --muted:#5f6b7b; --card:#f8fafc; --accent:#0aac5a; --line:#e6e8ef;
+    --pill:#fff; --pill-b:#d9dee8; --tbl-h:#f3f6fb;
+  }
+  html,body{height:100%}
+  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial;
+       color:var(--fg); background:var(--bg); margin:0; padding:24px}
+  h1{margin:0 0 8px 0; font-size:22px}
+  .row{display:flex; gap:16px; flex-wrap:wrap; align-items:flex-end}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:16px; margin:14px 0;}
+  label{font-weight:600; display:block; margin:8px 0 6px}
+  input[type="number"]{padding:8px 10px; border-radius:10px; border:1px solid var(--line);
+        width:200px; font-size:15px; background:#fff; color:#111}
+  button{padding:10px 14px; border-radius:12px; border:1px solid var(--fg);
+        background:var(--fg); color:#fff; cursor:pointer; font-weight:700}
+  button:hover{filter:brightness(1.05)}
+  .mono{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace}
+  .muted{color:var(--muted); font-size:12px}
+  .pill{display:inline-block; background:var(--pill); border:1px solid var(--pill-b);
+        padding:6px 10px; border-radius:999px; margin:4px 6px 0 0}
+  table{width:100%; border-collapse:collapse; margin-top:10px}
+  th, td{border-bottom:1px solid var(--line); padding:8px 6px; text-align:left}
+  th{background:var(--tbl-h)}
+  .small{font-size:13px}
+  .grid{display:grid; grid-template-columns:1fr; gap:10px}
+  @media (min-width:1060px){ .grid{grid-template-columns:1.2fr 1fr} }
+  .badge{font-weight:700; color:#fff; background:var(--accent); border-radius:8px; padding:2px 6px; font-size:12px}
+  .toolbar{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+  .spacer{flex:1}
+  svg{width:100%; height:auto; background:transparent}
+  .cell{fill:none; stroke:var(--line);}
+  .orbtext{font: 12px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace; fill:var(--fg)}
+  .arrow{stroke:var(--muted); stroke-width:1.2}
+  .used{fill:var(--accent); stroke:var(--accent)}
+  .legend{display:flex; gap:12px; align-items:center; margin-top:8px}
+  .dot{width:12px; height:12px; border-radius:6px; background:var(--accent); display:inline-block; border:1px solid var(--accent)}
+</style>
+</head>
+<body>
+  <div class="toolbar">
+    <h1>Distribuição Eletrônica — Diagrama de Linus Pauling (n+ℓ)</h1>
+    <div class="spacer"></div>
+    <button id="printBtn">🧾 Imprimir/PDF</button>
+  </div>
+
+  <div class="card">
+    <div class="row">
+      <div>
+        <label for="zin">Número atômico (Z)</label>
+        <input id="zin" type="number" value="118" min="1" max="7000" />
+        <div class="muted small">Intervalo aceito: 1 a 7000</div>
+      </div>
+      <div>
+        <label for="kin">Posição do elétron (k)</label>
+        <input id="kin" type="number" value="118" min="1" max="7000" />
+        <div class="muted small">Use 1 ≤ k ≤ Z.</div>
+      </div>
+      <div>
+        <button id="go">Calcular</button>
+        <button id="anim">▶️ Animar preenchimento</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <div><span class="badge">Resultado</span></div>
+      <div id="configText" class="mono" style="margin-top:8px; font-size:16px; line-height:1.4">—</div>
+      <div id="onlyUsedCapsules" style="margin-top:10px"></div>
+    </div>
+    <div class="card">
+      <div><span class="badge">Endereço quântico (elétron k)</span></div>
+      <div id="qnums" class="mono" style="margin-top:8px; font-size:16px">—</div>
+      <div id="qwarn" class="muted small" style="margin-top:6px"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="row" style="align-items:flex-start">
+      <div style="flex:1">
+        <div><span class="badge">Diagrama energético (Madelung) – linhas por n, colunas por l</span></div>
+        <svg id="diagram" viewBox="0 0 900 600" role="img" aria-label="Diagrama de energia pela regra n+ℓ (linhas=n, colunas=l)"></svg>
+        <div class="legend">
+          <span class="dot"></span><span class="muted small">subnível utilizado até Z</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+(function(){
+  // ====== CORREÇÃO: sequência inclui 'j' e NÃO pula 'p' ======
+  const baseLetters = ["s","p","d","f","g","h","i","j","k","l","m","n","o","p","q","r","t","u","v","w","x","y","z"];
+  function letterFor(l){ if(l < baseLetters.length) return baseLetters[l]; const idx = l - baseLetters.length; const first = String.fromCharCode(97 + Math.floor(idx / 26) % 26); const second = String.fromCharCode(97 + (idx % 26)); return first + second; }
+  function capFor(l){ return 2*(2*l+1); }
+
+  function buildMadelungList(){
+    const arr = []; const NMAX = 120;
+    for(let n=1;n<=NMAX;n++){
+      for(let l=0;l<n;l++){
+        const letter = letterFor(l);
+        arr.push({n, l, letter, orb:`${n}${letter}`, cap:capFor(l), sum:n+l});
+      }
+    }
+    arr.sort((a,b)=> (a.sum-b.sum) || (a.n-b.n));
+    let start = 1;
+    for(const r of arr){ r.startZ = start; r.endZ = start + r.cap - 1; start = r.endZ + 1; }
+    return arr;
+  }
+  const MAD = buildMadelungList();
+
+  function fillForZ(Z){
+    const out = []; let left = Z;
+    for(const r of MAD){
+      const take = Math.max(0, Math.min(r.cap, left));
+      out.push({...r, take});
+      left -= take;
+      if(left<=0) break;
+    }
+    return out;
+  }
+
+  function mlMsFor(n,l,p){
+    const orbitals = 2*l+1;
+    if(p<=orbitals){ const ml = -l + (p-1); return {ml, ms:"+1/2"}; }
+    const off = p - orbitals; const ml = -l + (off-1); return {ml, ms:"-1/2"};
+  }
+
+  function locateK(k){
+    for(const r of MAD){ if(k>=r.startZ && k<=r.endZ){ const pos = k - r.startZ + 1; return {...r, pos}; } }
+    return null;
+  }
+
+  // RENDER
+  const cfg = document.getElementById('configText');
+  const caps = document.getElementById('onlyUsedCapsules');
+  const qn = document.getElementById('qnums');
+  const qw = document.getElementById('qwarn');
+  const svg = document.getElementById('diagram');
+
+  function render(){
+    const Z = Number(document.getElementById('zin').value);
+    const k = Number(document.getElementById('kin').value);
+    const used = fillForZ(Z);
+
+    cfg.textContent = used.filter(u=>u.take>0).map(u=>`${u.orb}${u.take}`).join(" ") || "—";
+    caps.innerHTML = "";
+    used.forEach(u=>{ if(u.take>0){ const s=document.createElement('span'); s.className="pill mono"; s.textContent=`${u.orb}${u.take}`; caps.appendChild(s); } });
+
+    if(!(Number.isFinite(k)) || k<1 || k>Z){ qn.textContent="—"; qw.textContent="Defina k tal que 1 ≤ k ≤ Z."; }
+    else { const slot = locateK(k); const {ml, ms} = mlMsFor(slot.n, slot.l, slot.pos);
+           qn.textContent = `n=${slot.n}, l=${slot.l} (${slot.letter}), m_l=${ml}, m_s=${ms} — (subnível ${slot.orb}, posição ${slot.pos})`; qw.textContent=""; }
+
+    drawDiagram(used);
+  }
+
+  function drawDiagram(used){
+    const W=900, H=600, padX=60, padY=40;
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    while(svg.firstChild) svg.removeChild(svg.firstChild);
+
+    let maxN = 1, maxL = 0, minSum=Infinity, maxSum=-Infinity;
+    const usedSums = new Set();
+    used.forEach(u=>{ if(u.n>maxN) maxN=u.n; if(u.l>maxL) maxL=u.l; const s=u.n+u.l; usedSums.add(s); if(s<minSum)minSum=s; if(s>maxSum)maxSum=s; });
+    maxN = Math.max(maxN, 12); maxL = Math.max(maxL, 6);
+
+    const cw = (W - 2*padX) / (maxL+1);
+    const ch = (H - 2*padY) / (maxN+1);
+
+    const mkText = (x,y,str)=>{ const t=document.createElementNS("http://www.w3.org/2000/svg","text"); t.setAttribute("x",x); t.setAttribute("y",y); t.setAttribute("class","orbtext"); t.textContent=str; return t; };
+
+    for(let l=0;l<=maxL;l++){ const x=padX + l*cw; const t=mkText(x, padY-14, letterFor(l)); t.setAttribute("text-anchor","middle"); svg.appendChild(t); }
+    for(let n=1;n<=maxN;n++){ const y=padY + n*ch; const t=mkText(padX-20, y+4, String(n)); t.setAttribute("text-anchor","end"); svg.appendChild(t); }
+
+    used.forEach(r=>{ const x=padX+r.l*cw, y=padY+r.n*ch;
+      const rect=document.createElementNS("http://www.w3.org/2000/svg","rect"); rect.setAttribute("x",x-22); rect.setAttribute("y",y-14); rect.setAttribute("width",44); rect.setAttribute("height",22); rect.setAttribute("rx",6); rect.setAttribute("class","cell"); svg.appendChild(rect);
+      const t=mkText(x,y,r.orb); t.setAttribute("text-anchor","middle"); t.setAttribute("dominant-baseline","middle"); svg.appendChild(t); });
+
+    for(let s=minSum; s<=maxSum; s++){ if(!usedSums.has(s)) continue; const pts=[]; for(let n=1;n<=maxN;n++){ const l=s-n; if(l>=0 && l<=maxL && l<n){ const x=padX+l*cw, y=padY+n*ch; pts.push([x,y]); } } if(pts.length>1){ const line=document.createElementNS("http://www.w3.org/2000/svg","polyline"); line.setAttribute("fill","none"); line.setAttribute("class","arrow"); line.setAttribute("points", pts.map(p=>p.join(",")).join(" ")); svg.appendChild(line); } }
+
+    used.forEach(u=>{ if(u.take>0){ const x=padX+u.l*cw, y=padY+u.n*ch; const dot=document.createElementNS("http://www.w3.org/2000/svg","circle"); dot.setAttribute("cx", x-22+6); dot.setAttribute("cy", y-14+6); dot.setAttribute("r", 4); dot.setAttribute("class","used"); svg.appendChild(dot); } });
+  }
+
+  // Animation
+  let animTimer=null;
+  function animateFill(){
+    if(animTimer){ clearInterval(animTimer); animTimer=null; }
+    const Z = Number(document.getElementById('zin').value);
+  }
+})();
+</script>
+</body>
+</html>
